@@ -19,7 +19,7 @@ const account1 = {
     "2020-05-08T14:11:59.604Z",
     "2020-05-27T17:01:17.194Z",
     "2020-07-11T23:36:17.929Z",
-    "2020-07-12T10:51:36.790Z",
+    "2023-07-24T10:51:36.790Z",
   ],
   currency: "EUR",
   locale: "pt-PT", // de-DE
@@ -46,17 +46,36 @@ const account2 = {
 };
 
 const account3 = {
-  owner: "Steven Thomas Williams",
-  movements: [200, -200, 340, -300, -20, 50, 400, -460],
-  interestRate: 0.7,
+  owner: "Jieun Choi",
+  movements: [2000, -500, 700, 1300, -200],
+  interestRate: 2.0,
   pin: 3333,
+  movementsDates: [
+    "2019-11-01T13:15:33.035Z",
+    "2019-12-15T09:48:16.867Z",
+    "2020-02-10T06:04:23.907Z",
+    "2020-04-20T14:18:46.235Z",
+    "2020-07-05T16:33:06.386Z",
+  ],
+  currency: "KRW",
+  locale: "ko-KR",
 };
 
 const account4 = {
-  owner: "Sarah Smith",
+  owner: "CHIH CHUN CHEN",
   movements: [430, 1000, 700, 50, 90],
   interestRate: 1,
   pin: 4444,
+
+  movementsDates: [
+    "2019-12-25T06:04:23.907Z",
+    "2020-01-25T14:18:46.235Z",
+    "2023-07-20T16:33:06.386Z",
+    "2023-07-24T14:43:26.374Z",
+    "2023-07-26T12:01:20.894Z",
+  ],
+  currency: "NTD",
+  locale: "zh-TW",
 };
 
 const accounts = [account1, account2, account3, account4];
@@ -87,6 +106,25 @@ const inputLoanAmount = document.querySelector(".form__input--loan-amount");
 const inputCloseUsername = document.querySelector(".form__input--user");
 const inputClosePin = document.querySelector(".form__input--pin");
 
+const formatMovementDate = function (date, locale) {
+  const calcDaysPassed = (date1, date2) =>
+    Math.abs(date2 - date1) / (1000 * 60 * 60 * 24);
+
+  const dayPassed = Math.round(calcDaysPassed(new Date(), date));
+
+  if (dayPassed === 0) return "Today";
+  if (dayPassed === 1) return "Yesterday";
+  if (dayPassed <= 7) return `${dayPassed} days ago`;
+  return new Intl.DateTimeFormat(locale).format(date);
+};
+
+const formatCur = function (value, locale, currency) {
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: currency,
+  }).format(value);
+};
+
 const displayMovements = function (acc, sort = false) {
   containerMovements.innerHTML = "";
 
@@ -96,12 +134,10 @@ const displayMovements = function (acc, sort = false) {
 
   movs.forEach(function (mov, i) {
     const type = mov > 0 ? "deposit" : "withdrawal";
-
     const date = new Date(acc.movementsDates[i]);
-    const day = `${date.getDate()}`.padStart(2, 0);
-    const month = `${date.getMonth() + 1}`.padStart(2, 0);
-    const year = date.getFullYear();
-    const displayDate = `${day}/${month}/${year}`;
+    const displayDate = formatMovementDate(date, acc.locale);
+
+    const formattedMov = formatCur(mov, acc.locale, acc.currency);
 
     const html = `
       <div class="movements__row">
@@ -109,7 +145,7 @@ const displayMovements = function (acc, sort = false) {
       i + 1
     } ${type}</div>
         <div class="movements__date">${displayDate}</div>
-        <div class="movements__value">${mov.toFixed(2)}€</div>
+        <div class="movements__value">${formattedMov}</div>
       </div>
     `;
 
@@ -119,26 +155,30 @@ const displayMovements = function (acc, sort = false) {
 
 const calcDisplayBlance = function (acc) {
   acc.balance = acc.movements.reduce((acc, mov) => acc + mov, 0);
-  labelBalance.textContent = `${acc.balance.toFixed(2)} €`;
+  labelBalance.textContent = formatCur(acc.balance, acc.locale, acc.currency);
 };
 
 const calcDisplaySummary = function (acc) {
   const incomes = acc.movements
     .filter((mov) => mov > 0)
     .reduce((acc, mov) => acc + mov, 0);
-  labelSumIn.textContent = `${incomes.toFixed(2)}€`;
+  labelSumIn.textContent = formatCur(incomes, acc.locale, acc.currency);
 
   const outcomes = acc.movements
     .filter((mov) => mov < 0)
     .reduce((acc, mov) => acc + mov, 0);
-  labelSumOut.textContent = `${Math.abs(outcomes).toFixed(2)}€`;
+  labelSumOut.textContent = formatCur(
+    Math.abs(outcomes),
+    acc.locale,
+    acc.currency
+  );
 
   const interest = acc.movements
     .filter((mov) => mov > 0)
     .map((deposit) => (deposit * acc.interestRate.toFixed(2)) / 100)
     .filter((int) => int > 1)
     .reduce((acc, int) => acc + int, 0);
-  labelSumInterest.textContent = `${interest}€`;
+  labelSumInterest.textContent = formatCur(interest, acc.locale, acc.currency);
 };
 
 const createUserNames = function (accs) {
@@ -167,11 +207,9 @@ const updateUI = function (acc) {
 let currentAccount;
 
 // FAKE ALWAYS LOGGED IN
-currentAccount = account1;
+currentAccount = account4;
 updateUI(currentAccount);
 containerApp.style.opacity = 100;
-
-// day/month/year
 
 btnLogin.addEventListener("click", function (e) {
   e.preventDefault();
@@ -189,12 +227,20 @@ btnLogin.addEventListener("click", function (e) {
 
     // Create current date and time
     const now = new Date();
-    const day = `${now.getDate()}`.padStart(2, 0);
-    const month = `${now.getMonth() + 1}`.padStart(2, 0);
-    const year = now.getFullYear();
-    const hour = `${now.getHours()}`.padStart(2, 0);
-    const min = `${now.getMinutes()}`.padStart(2, 0);
-    labelDate.textContent = `${day}/${month}/${year}, ${hour}:${min}`;
+    const options = {
+      hours: "numeric",
+      minutes: "numeric",
+      day: "numeric",
+      month: "numeric",
+      year: "numeric",
+      weekday: "long",
+    };
+    //const locale = navigator.language;
+
+    labelDate.textContent = new Intl.DateTimeFormat(
+      currentAccount.locale,
+      options
+    ).format(now);
 
     // Clear input field
     inputLoginUsername.value = inputLoginPin.value = "";
@@ -224,8 +270,8 @@ btnTransfer.addEventListener("click", function (e) {
     receiverAcc.movements.push(amount);
 
     // Add transfer date
-    currentAccount.movementsDates.push(new Date().toDateString());
-    receiverAcc.movementsDates.push(new Date().toDateString());
+    currentAccount.movementsDates.push(new Date().toISOString());
+    receiverAcc.movementsDates.push(new Date().toISOString());
 
     // Update UI
     updateUI(currentAccount);
@@ -290,3 +336,4 @@ const currencies = new Map([
 const movements = [200, 450, -400, 3000, -650, -130, 70, 1300];
 
 /////////////////////////////////////////////////
+setTimeout(() => console.log("Here is your pizza"), 3000);
