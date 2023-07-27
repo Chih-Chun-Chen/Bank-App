@@ -1,4 +1,4 @@
-# Bank App
+# Bankist App
 **Project Description for Resume: Bankist App**
 
 I. **Project Overview:**
