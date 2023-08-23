@@ -1,4 +1,4 @@
-# Bankist App
+# Bankist App (The complete JavaScript Course 2023: From Zero to Expert)
 
 I. **Project Overview:**
 The Bankist App is a web application that simulates banking operations, allowing users to manage their accounts, make transactions, and view their balance and transaction history. The app is built using JavaScript and interacts with the DOM to display user interface elements and handle user interactions.
